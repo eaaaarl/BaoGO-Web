@@ -40,7 +40,19 @@ export const authApi = createApi({
         }
       },
     }),
+
+    singOut: builder.mutation<any, void>({
+      queryFn: async () => {
+        await supabase.auth.signOut();
+
+        return {
+          data: {
+            success: true,
+          },
+        };
+      },
+    }),
   }),
 });
 
-export const { useSignInMutation } = authApi;
+export const { useSignInMutation, useSingOutMutation } = authApi;

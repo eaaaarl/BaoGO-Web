@@ -14,9 +14,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   }, [user, router])
 
   if (!user) {
-    return null
+    return <>{children}</>
   }
-  return (
-    <>{children}</>
-  )
+
+  return null
 }
