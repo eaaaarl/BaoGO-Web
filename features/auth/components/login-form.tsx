@@ -30,7 +30,6 @@ export function LoginForm({
     e.preventDefault();
 
     await signIn({ email, password }).unwrap()
-
     toast.success('Sign in successfully.')
 
     setEmail('')
