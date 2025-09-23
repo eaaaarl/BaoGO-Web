@@ -7,6 +7,7 @@ import { persistStore } from "redux-persist";
 import store from "@/lib/redux/store";
 import { Toaster } from "@/components/ui/sonner";
 import { PersistGate } from "redux-persist/integration/react";
+import AuthProvider from "@/components/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,8 +43,10 @@ export default function RootLayout({
       >
         <ReduxProvider store={store}>
           <PersistGate persistor={persistor} loading={null}>
-            <Toaster />
-            {children}
+            <AuthProvider>
+              <Toaster />
+              {children}
+            </AuthProvider>
           </PersistGate>
         </ReduxProvider>
       </body>
