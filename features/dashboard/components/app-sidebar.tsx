@@ -24,16 +24,11 @@ import {
 } from "@/components/ui/sidebar"
 import { TeamSwitcher } from "./nav-switcher"
 import { NavMain } from "./nav-main"
-import { NavProjects } from "./nav-projects"
 import { NavUser } from "./nav-user"
+import { NavProjects } from "./nav-projects"
 
 // This is sample data.
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   teams: [
     {
       name: "Acme Inc",
@@ -53,14 +48,14 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
+      title: "Rides",
       url: "#",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "History",
-          url: "#",
+          title: "List",
+          url: "/ride",
         },
         {
           title: "Starred",
@@ -73,7 +68,7 @@ const data = {
       ],
     },
     {
-      title: "Models",
+      title: "Driver",
       url: "#",
       icon: Bot,
       items: [
@@ -92,7 +87,7 @@ const data = {
       ],
     },
     {
-      title: "Documentation",
+      title: "Users",
       url: "#",
       icon: BookOpen,
       items: [
@@ -115,7 +110,7 @@ const data = {
       ],
     },
     {
-      title: "Settings",
+      title: "Request",
       url: "#",
       icon: Settings2,
       items: [
