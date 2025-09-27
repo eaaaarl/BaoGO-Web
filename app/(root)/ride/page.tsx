@@ -5,100 +5,38 @@ import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, MapPin, Clock, Dolla
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Breadcrumb, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink, BreadcrumbList, BreadcrumbItem } from '@/components/ui/breadcrumb'
+import { useGetAllRidesQuery } from '@/features/ride/api/rideApi'
 
-// Mock ride data
-const mockRides = [
-  {
-    id: 'RD001',
-    driver: 'John Smith',
-    passenger: 'Alice Johnson',
-    pickup: 'Mall of Asia',
-    destination: 'Makati CBD',
-    status: 'completed',
-    fare: 350.00,
-    distance: '12.5 km',
-    duration: '25 mins',
-    vehicleType: 'Sedan',
-    createdAt: '2025-09-26 14:30',
-    rating: 4.8
-  },
-  {
-    id: 'RD002',
-    driver: 'Maria Santos',
-    passenger: 'Bob Wilson',
-    pickup: 'BGC Taguig',
-    destination: 'NAIA Terminal 3',
-    status: 'ongoing',
-    fare: 480.00,
-    distance: '18.2 km',
-    duration: '35 mins',
-    vehicleType: 'SUV',
-    createdAt: '2025-09-26 15:45',
-    rating: null
-  },
-  {
-    id: 'RD003',
-    driver: 'Carlos Rodriguez',
-    passenger: 'Diana Chen',
-    pickup: 'Quezon City',
-    destination: 'Ortigas Center',
-    status: 'cancelled',
-    fare: 0,
-    distance: '8.7 km',
-    duration: '20 mins',
-    vehicleType: 'Hatchback',
-    createdAt: '2025-09-26 13:15',
-    rating: null
-  },
-  {
-    id: 'RD004',
-    driver: 'Lisa Garcia',
-    passenger: 'Mike Thompson',
-    pickup: 'Alabang Town Center',
-    destination: 'Makati Avenue',
-    status: 'pending',
-    fare: 420.00,
-    distance: '15.3 km',
-    duration: '30 mins',
-    vehicleType: 'Sedan',
-    createdAt: '2025-09-26 16:20',
-    rating: null
-  },
-  {
-    id: 'RD005',
-    driver: 'Robert Kim',
-    passenger: 'Sarah Davis',
-    pickup: 'SM North EDSA',
-    destination: 'UP Diliman',
-    status: 'completed',
-    fare: 180.00,
-    distance: '5.8 km',
-    duration: '15 mins',
-    vehicleType: 'Motorcycle',
-    createdAt: '2025-09-26 12:00',
-    rating: 5.0
-  },
-  {
-    id: 'RD006',
-    driver: 'Ana Martinez',
-    passenger: 'Tom Brown',
-    pickup: 'Eastwood City',
-    destination: 'Manila Bay',
-    status: 'ongoing',
-    fare: 520.00,
-    distance: '22.1 km',
-    duration: '45 mins',
-    vehicleType: 'SUV',
-    createdAt: '2025-09-26 16:50',
-    rating: null
-  }
-]
+export interface Ride {
+  id: string
+  driver_id: string
+  rider_id: string
+  chat_room_id: string
+  pickup_location: string
+  destination_location: string
+  pickup_latitude: number
+  pickup_longitude: number
+  destination_latitude: number
+  destination_longitude: number
+  status: "cancelled" | "completed" | string
+  requested_at: string
+  accepted_at: string
+  started_at: string
+  completed_at: string | null
+  cancelled_at: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
 
 const statusColors = {
   completed: 'bg-green-100 text-green-800',
   ongoing: 'bg-blue-100 text-blue-800',
+  in_progress: 'bg-blue-100 text-blue-800',
+  accepted: 'bg-blue-100 text-blue-800',
   cancelled: 'bg-red-100 text-red-800',
-  pending: 'bg-yellow-100 text-yellow-800'
+  pending: 'bg-yellow-100 text-yellow-800',
+  requested: 'bg-yellow-100 text-yellow-800'
 }
 
 const vehicleIcons = {
@@ -108,51 +46,186 @@ const vehicleIcons = {
   Motorcycle: Car
 }
 
+// Helper function to calculate distance between two points
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  return `${distance.toFixed(1)} km`;
+}
+
+// Helper function to format date
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-PH', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+}
+
+// Helper function to calculate estimated fare (you can adjust this logic)
+const calculateEstimatedFare = (distance: number): number => {
+  const baseFare = 50;
+  const ratePerKm = 15;
+  return baseFare + (distance * ratePerKm);
+}
+
+// Helper function to get status display text
+const getStatusDisplay = (status: string): string => {
+  const statusMap: { [key: string]: string } = {
+    'requested': 'Pending',
+    'accepted': 'Ongoing',
+    'in_progress': 'Ongoing',
+    'completed': 'Completed',
+    'cancelled': 'Cancelled'
+  };
+  return statusMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+// Helper function to get normalized status for filtering
+const getNormalizedStatus = (status: string): string => {
+  const statusMap: { [key: string]: string } = {
+    'requested': 'pending',
+    'accepted': 'ongoing',
+    'in_progress': 'ongoing',
+    'completed': 'completed',
+    'cancelled': 'cancelled'
+  };
+  return statusMap[status] || status;
+}
+
 export default function Ride() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [vehicleFilter, setVehicleFilter] = useState('all')
+
+  const { data: ridesResponse, isLoading, error } = useGetAllRidesQuery()
+
+  const rides: Ride[] = ridesResponse || []
 
   const filteredRides = useMemo(() => {
-    return mockRides.filter(ride => {
+    return rides.filter(ride => {
       const matchesSearch =
         ride.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ride.driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ride.passenger.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ride.pickup.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ride.destination.toLowerCase().includes(searchTerm.toLowerCase())
+        ride.driver_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ride.rider_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ride.pickup_location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ride.destination_location.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesStatus = statusFilter === 'all' || ride.status === statusFilter
-      const matchesVehicle = vehicleFilter === 'all' || ride.vehicleType === vehicleFilter
+      const normalizedStatus = getNormalizedStatus(ride.status);
+      const matchesStatus = statusFilter === 'all' || normalizedStatus === statusFilter
 
-      return matchesSearch && matchesStatus && matchesVehicle
+      return matchesSearch && matchesStatus
     })
-  }, [searchTerm, statusFilter, vehicleFilter])
+  }, [rides, searchTerm, statusFilter])
 
-  const stats = {
-    total: mockRides.length,
-    completed: mockRides.filter(r => r.status === 'completed').length,
-    ongoing: mockRides.filter(r => r.status === 'ongoing').length,
-    cancelled: mockRides.filter(r => r.status === 'cancelled').length,
-    totalRevenue: mockRides.filter(r => r.status === 'completed').reduce((sum, r) => sum + r.fare, 0)
+  const stats = useMemo(() => {
+    const completed = rides.filter(r => r.status === 'completed')
+    const ongoing = rides.filter(r => ['accepted', 'in_progress'].includes(r.status))
+    const cancelled = rides.filter(r => r.status === 'cancelled')
+    const pending = rides.filter(r => r.status === 'requested')
+
+    // Calculate total estimated revenue for completed rides
+    const totalRevenue = completed.reduce((sum, ride) => {
+      const distance = parseFloat(calculateDistance(
+        ride.pickup_latitude,
+        ride.pickup_longitude,
+        ride.destination_latitude,
+        ride.destination_longitude
+      ));
+      return sum + calculateEstimatedFare(distance);
+    }, 0);
+
+    return {
+      total: rides.length,
+      completed: completed.length,
+      ongoing: ongoing.length,
+      cancelled: cancelled.length,
+      pending: pending.length,
+      totalRevenue
+    }
+  }, [rides])
+
+  if (isLoading) {
+    return (
+      <>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Rides</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
+        <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  if (error) {
+    return (
+      <>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="hidden md:block" />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>Rides</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+          </div>
+        </header>
+        <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="text-red-600 text-xl mb-2">Error loading rides</div>
+              <p className="text-gray-600">Please try refreshing the page</p>
+            </div>
+          </div>
+        </div>
+      </>
+    )
   }
 
   return (
-
     <>
       <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
+          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="/dashboard">
-                  Dashboard
-                </BreadcrumbLink>
+                <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="hidden md:block" />
               <BreadcrumbItem>
@@ -162,8 +235,8 @@ export default function Ride() {
           </Breadcrumb>
         </div>
       </header>
-      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
 
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Ride Management</h1>
@@ -224,7 +297,7 @@ export default function Ride() {
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Revenue</p>
+                <p className="text-sm font-medium text-gray-600">Est. Revenue</p>
                 <p className="text-2xl font-bold text-green-600">₱{stats.totalRevenue.toFixed(2)}</p>
               </div>
               <div className="p-2 bg-green-100 rounded-lg">
@@ -242,7 +315,7 @@ export default function Ride() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search rides by ID, driver, passenger, or location..."
+                  placeholder="Search rides by ID, driver, rider, or location..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -261,18 +334,6 @@ export default function Ride() {
                 <option value="ongoing">Ongoing</option>
                 <option value="pending">Pending</option>
                 <option value="cancelled">Cancelled</option>
-              </select>
-
-              <select
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={vehicleFilter}
-                onChange={(e) => setVehicleFilter(e.target.value)}
-              >
-                <option value="all">All Vehicles</option>
-                <option value="Sedan">Sedan</option>
-                <option value="SUV">SUV</option>
-                <option value="Hatchback">Hatchback</option>
-                <option value="Motorcycle">Motorcycle</option>
               </select>
             </div>
           </div>
@@ -298,13 +359,10 @@ export default function Ride() {
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fare & Distance
+                    Distance & Est. Fare
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vehicle
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Rating
+                    Timeline
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -313,64 +371,83 @@ export default function Ride() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredRides.map((ride) => {
-                  const VehicleIcon = vehicleIcons[ride.vehicleType] || Car
+                  const distance = calculateDistance(
+                    ride.pickup_latitude,
+                    ride.pickup_longitude,
+                    ride.destination_latitude,
+                    ride.destination_longitude
+                  );
+                  const distanceNum = parseFloat(distance);
+                  const estimatedFare = calculateEstimatedFare(distanceNum);
+
                   return (
                     <tr key={ride.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">{ride.id}</div>
-                          <div className="text-sm text-gray-500">Driver: {ride.driver}</div>
-                          <div className="text-sm text-gray-500">Passenger: {ride.passenger}</div>
-                          <div className="text-xs text-gray-400">{ride.createdAt}</div>
+                          <div className="text-sm text-gray-500">Driver: {ride.driver_id}</div>
+                          <div className="text-sm text-gray-500">Rider: {ride.rider_id}</div>
+                          <div className="text-xs text-gray-400">{formatDate(ride.created_at)}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
                           <div className="flex items-center text-sm text-gray-900">
                             <MapPin className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                            <span className="truncate">{ride.pickup}</span>
+                            <span className="truncate max-w-xs" title={ride.pickup_location}>
+                              {ride.pickup_location}
+                            </span>
                           </div>
                           <div className="flex items-center text-sm text-gray-900">
                             <MapPin className="w-4 h-4 text-red-500 mr-2 flex-shrink-0" />
-                            <span className="truncate">{ride.destination}</span>
+                            <span className="truncate max-w-xs" title={ride.destination_location}>
+                              {ride.destination_location}
+                            </span>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[ride.status]}`}>
-                          {ride.status.charAt(0).toUpperCase() + ride.status.slice(1)}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusColors[getNormalizedStatus(ride.status)] || statusColors.pending
+                          }`}>
+                          {getStatusDisplay(ride.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">₱{ride.fare.toFixed(2)}</div>
-                        <div className="text-sm text-gray-500">{ride.distance}</div>
-                        <div className="text-xs text-gray-400">{ride.duration}</div>
+                        <div className="text-sm text-gray-900">₱{estimatedFare.toFixed(2)}</div>
+                        <div className="text-sm text-gray-500">{distance}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <VehicleIcon className="w-4 h-4 text-gray-500 mr-2" />
-                          <span className="text-sm text-gray-900">{ride.vehicleType}</span>
+                        <div className="text-xs text-gray-500 space-y-1">
+                          <div>Requested: {formatDate(ride.requested_at)}</div>
+                          {ride.accepted_at && (
+                            <div>Accepted: {formatDate(ride.accepted_at)}</div>
+                          )}
+                          {ride.completed_at && (
+                            <div>Completed: {formatDate(ride.completed_at)}</div>
+                          )}
+                          {ride.cancelled_at && (
+                            <div>Cancelled: {formatDate(ride.cancelled_at)}</div>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {ride.rating ? (
-                          <div className="flex items-center">
-                            <span className="text-sm font-medium text-gray-900">{ride.rating}</span>
-                            <span className="text-yellow-400 ml-1">★</span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-400">No rating</span>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <button className="text-gray-400 hover:text-blue-600 transition-colors">
+                          <button
+                            className="text-gray-400 hover:text-blue-600 transition-colors"
+                            title="View Details"
+                          >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button className="text-gray-400 hover:text-green-600 transition-colors">
+                          <button
+                            className="text-gray-400 hover:text-green-600 transition-colors"
+                            title="Edit Ride"
+                          >
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                          <button
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                            title="More Actions"
+                          >
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                         </div>
@@ -382,10 +459,12 @@ export default function Ride() {
             </table>
           </div>
 
-          {filteredRides.length === 0 && (
+          {filteredRides.length === 0 && !isLoading && (
             <div className="text-center py-12">
               <Car className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No rides found matching your criteria</p>
+              <p className="text-gray-500">
+                {rides.length === 0 ? 'No rides available' : 'No rides found matching your criteria'}
+              </p>
             </div>
           )}
         </div>
