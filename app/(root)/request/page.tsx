@@ -1,0 +1,444 @@
+'use client'
+import React, { useState } from 'react'
+import { Breadcrumb, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink, BreadcrumbList, BreadcrumbItem } from '@/components/ui/breadcrumb'
+import { SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MapPin, Clock, User, Phone, Filter, Search, Eye, XCircle, CheckCircle, Car, AlertCircle, BarChart3 } from 'lucide-react'
+
+// Mock data based on your RideRequest interface
+const mockRideRequests = [
+  {
+    id: "req_001",
+    rider_id: "rider_123",
+    driver_id: "driver_456",
+    pickup: "SM City Davao, J.P. Laurel Ave, Bajada, Davao City",
+    destination: "Davao International Airport, Davao City",
+    pickup_latitude: 7.0731,
+    pickup_longitude: 125.6128,
+    destination_latitude: 7.1254,
+    destination_longitude: 125.6456,
+    status: "Accepted",
+    created_at: "2024-01-15T08:30:00Z"
+  },
+  {
+    id: "req_002",
+    rider_id: "rider_789",
+    driver_id: "",
+    pickup: "University of the Philippines Mindanao, Bago Oshiro, Tugbok",
+    destination: "Abreeza Mall, J.P. Laurel Ave, Davao City",
+    pickup_latitude: 7.0547,
+    pickup_longitude: 125.5721,
+    destination_latitude: 7.0669,
+    destination_longitude: 125.6089,
+    status: "Pending",
+    created_at: "2024-01-15T09:15:00Z"
+  },
+  {
+    id: "req_003",
+    rider_id: "rider_456",
+    driver_id: "driver_789",
+    pickup: "People's Park, Davao City",
+    destination: "Roxas Night Market, Roxas Ave, Davao City",
+    pickup_latitude: 7.0719,
+    pickup_longitude: 125.6147,
+    destination_latitude: 7.0697,
+    destination_longitude: 125.6181,
+    status: "Completed",
+    created_at: "2024-01-15T07:45:00Z"
+  },
+  {
+    id: "req_004",
+    rider_id: "rider_321",
+    driver_id: "driver_123",
+    pickup: "Matina Town Square, McArthur Highway, Davao City",
+    destination: "SM Lanang Premier, J.P. Laurel Ave, Davao City",
+    pickup_latitude: 7.0431,
+    pickup_longitude: 125.6247,
+    destination_latitude: 7.0982,
+    destination_longitude: 125.6278,
+    status: "In Progress",
+    created_at: "2024-01-15T10:00:00Z"
+  },
+  {
+    id: "req_005",
+    rider_id: "rider_654",
+    driver_id: "",
+    pickup: "Davao Medical School Foundation, Bajada, Davao City",
+    destination: "Victoria Plaza, R. Magsaysay Ave, Davao City",
+    pickup_latitude: 7.0658,
+    pickup_longitude: 125.6089,
+    destination_latitude: 7.0743,
+    destination_longitude: 125.6125,
+    status: "Cancelled",
+    created_at: "2024-01-15T06:30:00Z"
+  }
+]
+
+const getStatusColor = (status) => {
+  switch (status.toLowerCase()) {
+    case 'accepted': return 'bg-blue-100 text-blue-800 border-blue-200'
+    case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    case 'completed': return 'bg-green-100 text-green-800 border-green-200'
+    case 'in progress': return 'bg-purple-100 text-purple-800 border-purple-200'
+    case 'cancelled': return 'bg-red-100 text-red-800 border-red-200'
+    default: return 'bg-gray-100 text-gray-800 border-gray-200'
+  }
+}
+
+const formatTime = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+export default function RequestPages() {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedRequest, setSelectedRequest] = useState(null)
+
+  // Filter requests based on search and status
+  const filteredRequests = mockRideRequests.filter(request => {
+    const matchesSearch = request.pickup.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.id.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus = statusFilter === 'all' || request.status.toLowerCase() === statusFilter.toLowerCase()
+
+    return matchesSearch && matchesStatus
+  })
+
+  const statusCounts = {
+    all: mockRideRequests.length,
+    pending: mockRideRequests.filter(r => r.status.toLowerCase() === 'pending').length,
+    accepted: mockRideRequests.filter(r => r.status.toLowerCase() === 'accepted').length,
+    'in progress': mockRideRequests.filter(r => r.status.toLowerCase() === 'in progress').length,
+    completed: mockRideRequests.filter(r => r.status.toLowerCase() === 'completed').length,
+    cancelled: mockRideRequests.filter(r => r.status.toLowerCase() === 'cancelled').length
+  }
+
+  return (
+    <>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <SidebarSeparator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Request</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Request Management</h1>
+            <p className="text-gray-600 mt-1">Monitor and manage all ride requests</p>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{statusCounts.all}</div>
+                  <div className="text-sm text-gray-600">Total</div>
+                </div>
+                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <BarChart3 className="h-4 w-4 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-yellow-600">{statusCounts.pending}</div>
+                  <div className="text-sm text-gray-600">Pending</div>
+                </div>
+                <div className="h-8 w-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <AlertCircle className="h-4 w-4 text-yellow-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{statusCounts.accepted}</div>
+                  <div className="text-sm text-gray-600">Accepted</div>
+                </div>
+                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="h-4 w-4 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">{statusCounts['in progress']}</div>
+                  <div className="text-sm text-gray-600">In Progress</div>
+                </div>
+                <div className="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <Car className="h-4 w-4 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-green-600">{statusCounts.completed}</div>
+                  <div className="text-sm text-gray-600">Completed</div>
+                </div>
+                <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-red-600">{statusCounts.cancelled}</div>
+                  <div className="text-sm text-gray-600">Cancelled</div>
+                </div>
+                <div className="h-8 w-8 bg-red-100 rounded-lg flex items-center justify-center">
+                  <XCircle className="h-4 w-4 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by pickup, destination, or request ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+              <div className="sm:w-48">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="accepted">Accepted</SelectItem>
+                    <SelectItem value="in progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Request List */}
+        <div className="space-y-4">
+          {filteredRequests.map((request) => (
+            <Card key={request.id} className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                  <div className="flex-1 space-y-3">
+                    {/* Header Row */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-gray-900">Request #{request.id}</h3>
+                        <Badge className={getStatusColor(request.status)}>
+                          {request.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Clock className="h-4 w-4" />
+                        {formatDate(request.created_at)} at {formatTime(request.created_at)}
+                      </div>
+                    </div>
+
+                    {/* Route Info */}
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <div className="h-3 w-3 rounded-full bg-green-500 mt-1 flex-shrink-0"></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Pickup</p>
+                          <p className="text-sm text-gray-600">{request.pickup}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <div className="h-3 w-3 rounded-full bg-red-500 mt-1 flex-shrink-0"></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Destination</p>
+                          <p className="text-sm text-gray-600">{request.destination}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* User Info */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-blue-500" />
+                        <span className="text-gray-600">Rider:</span>
+                        <span className="font-medium">{request.rider_id}</span>
+                      </div>
+                      {request.driver_id && (
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-green-500" />
+                          <span className="text-gray-600">Driver:</span>
+                          <span className="font-medium">{request.driver_id}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-2 lg:ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedRequest(request)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                    >
+                      <MapPin className="h-4 w-4 mr-2" />
+                      View Map
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          {filteredRequests.length === 0 && (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <div className="text-gray-400 mb-4">
+                  <Search className="h-12 w-12 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No requests found</h3>
+                <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Request Details Modal/Card */}
+        {selectedRequest && (
+          <Card className="fixed inset-4 z-50 overflow-auto bg-white shadow-2xl">
+            <CardHeader className="border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle>Request Details - #{selectedRequest.id}</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedRequest(null)}
+                >
+                  ✕
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold mb-3">Request Information</h4>
+                  <div className="space-y-2 text-sm">
+                    <div><span className="text-gray-600">Request ID:</span> {selectedRequest.id}</div>
+                    <div><span className="text-gray-600">Status:</span>
+                      <Badge className={`ml-2 ${getStatusColor(selectedRequest.status)}`}>
+                        {selectedRequest.status}
+                      </Badge>
+                    </div>
+                    <div><span className="text-gray-600">Created:</span> {formatDate(selectedRequest.created_at)} at {formatTime(selectedRequest.created_at)}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-3">Participants</h4>
+                  <div className="space-y-2 text-sm">
+                    <div><span className="text-gray-600">Rider ID:</span> {selectedRequest.rider_id}</div>
+                    <div><span className="text-gray-600">Driver ID:</span> {selectedRequest.driver_id || 'Not assigned'}</div>
+                  </div>
+                </div>
+
+                <div className="md:col-span-2">
+                  <h4 className="font-semibold mb-3">Route Details</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                      <div className="h-3 w-3 rounded-full bg-green-500 mt-1"></div>
+                      <div>
+                        <p className="font-medium text-green-800">Pickup Location</p>
+                        <p className="text-green-700">{selectedRequest.pickup}</p>
+                        <p className="text-sm text-green-600">
+                          Coordinates: {selectedRequest.pickup_latitude}, {selectedRequest.pickup_longitude}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+                      <div className="h-3 w-3 rounded-full bg-red-500 mt-1"></div>
+                      <div>
+                        <p className="font-medium text-red-800">Destination</p>
+                        <p className="text-red-700">{selectedRequest.destination}</p>
+                        <p className="text-sm text-red-600">
+                          Coordinates: {selectedRequest.destination_latitude}, {selectedRequest.destination_longitude}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </>
+  )
+}
