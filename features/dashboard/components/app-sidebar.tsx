@@ -60,7 +60,7 @@ const data = {
     },
     {
       title: "Users",
-      url: "/users",
+      url: "/user",
       icon: BookOpen,
     },
     {

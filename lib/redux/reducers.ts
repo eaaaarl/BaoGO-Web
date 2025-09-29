@@ -3,6 +3,7 @@ import { combineReducers } from "@reduxjs/toolkit";
 import { authReducer } from "./state/authSlice";
 import { rideApi } from "@/features/ride/api/rideApi";
 import { driverApi } from "@/features/driver/api/driverApi";
+import { userApi } from "@/features/user/api/userApi";
 
 const rootReducer = combineReducers({
   // SLICE
@@ -13,9 +14,10 @@ const rootReducer = combineReducers({
   [authApi.reducerPath]: authApi.reducer,
   [rideApi.reducerPath]: rideApi.reducer,
   [driverApi.reducerPath]: driverApi.reducer,
+  [userApi.reducerPath]: userApi.reducer,
 });
 
-export const apis = [authApi, rideApi, driverApi];
+export const apis = [authApi, rideApi, driverApi, userApi];
 export const apisReducerPath = apis.map((api) => api.reducerPath);
 
 export default rootReducer;
