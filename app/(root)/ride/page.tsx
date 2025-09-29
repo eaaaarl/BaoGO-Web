@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
-import { Search, Filter, MoreHorizontal, Eye, Edit, Trash2, MapPin, Clock, DollarSign, Users, Car } from 'lucide-react'
+import { Search, MoreHorizontal, Eye, Edit, Trash2, MapPin, Clock, DollarSign, Users, Car } from 'lucide-react'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Separator } from '@/components/ui/separator'
 import { Breadcrumb, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink, BreadcrumbList, BreadcrumbItem } from '@/components/ui/breadcrumb'
@@ -39,12 +39,6 @@ const statusColors = {
   requested: 'bg-yellow-100 text-yellow-800'
 }
 
-const vehicleIcons = {
-  Sedan: Car,
-  SUV: Car,
-  Hatchback: Car,
-  Motorcycle: Car
-}
 
 // Helper function to calculate distance between two points
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
@@ -110,7 +104,7 @@ export default function Ride() {
 
   const { data: ridesResponse, isLoading, error } = useGetAllRidesQuery()
 
-  const rides: Ride[] = ridesResponse || []
+  const rides = useMemo(() => ridesResponse || [], [ridesResponse])
 
   const filteredRides = useMemo(() => {
     return rides.filter(ride => {

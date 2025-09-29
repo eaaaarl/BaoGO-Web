@@ -55,17 +55,17 @@ const data = {
     },
     {
       title: "Driver",
-      url: "#",
+      url: "/driver",
       icon: Bot,
     },
     {
       title: "Users",
-      url: "#",
+      url: "/users",
       icon: BookOpen,
     },
     {
       title: "Request",
-      url: "#",
+      url: "/request",
       icon: Settings2,
     },
   ],
