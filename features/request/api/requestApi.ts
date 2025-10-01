@@ -1,17 +1,35 @@
 import { supabase } from "@/lib/supabase";
 import { createApi, fakeBaseQuery } from "@reduxjs/toolkit/query/react";
-import { RideRequest } from "./interface";
+import { QueryPayload, RideRequest } from "./interface";
 
 export const requestApi = createApi({
   reducerPath: "requestApi",
   baseQuery: fakeBaseQuery(),
   endpoints: (builder) => ({
-    getAllRequest: builder.query<RideRequest[], void>({
-      queryFn: async () => {
+    getAllRequest: builder.query<RideRequest[], QueryPayload | void>({
+      queryFn: async (arg) => {
         try {
-          const { data, error } = await supabase
+          let query = supabase
             .from("request_ride")
-            .select("*");
+            .select(
+              "*, rider:profiles(*), driver:driver_profiles(*, profiles(*))"
+            );
+
+          if (arg?.status) {
+            query = query.eq("status", arg.status as string);
+          }
+
+          if (arg?.search) {
+            const searchTerm = arg.search;
+            query = query.or(
+              `pickup.ilike.%${searchTerm}%,destination.ilike.%${searchTerm}%`
+            );
+          }
+
+          const { data, error } = await query;
+
+          console.log(data);
+          console.log(error);
 
           if (error) {
             return {
@@ -34,7 +52,40 @@ export const requestApi = createApi({
         }
       },
     }),
+
+    getRequestById: builder.query<RideRequest, { id: string }>({
+      queryFn: async (arg) => {
+        try {
+          const { data, error } = await supabase
+            .from("request_ride")
+            .select(
+              "*, rider:profiles(*), driver:driver_profiles(*, profiles(*))"
+            )
+            .eq("id", arg.id)
+            .single();
+
+          if (error) {
+            return {
+              error: {
+                message: error.message,
+              },
+            };
+          }
+
+          return {
+            data,
+          };
+        } catch (error) {
+          console.error("Error at getRequestById", error);
+          return {
+            error: {
+              message: "Error at getRequestById",
+            },
+          };
+        }
+      },
+    }),
   }),
 });
 
-export const { useGetAllRequestQuery } = requestApi;
+export const { useGetAllRequestQuery, useGetRequestByIdQuery } = requestApi;

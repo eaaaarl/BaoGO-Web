@@ -1,15 +1,16 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Breadcrumb, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink, BreadcrumbList, BreadcrumbItem } from '@/components/ui/breadcrumb'
 import { SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Clock, User, Filter, Search, XCircle, CheckCircle, Car, AlertCircle, BarChart3 } from 'lucide-react'
+import { Clock, User, Filter, Search, XCircle, CheckCircle, Car, AlertCircle, BarChart3, MapPin } from 'lucide-react'
 import { useGetAllRequestQuery } from '@/features/request/api/requestApi'
 import Image from 'next/image'
 import { GEOAPIFY_KEY } from '@/constant/geoapify'
+import { useRouter } from 'next/navigation'
 
 
 const getStatusColor = (status) => {
@@ -42,10 +43,22 @@ const formatDate = (dateString) => {
 }
 
 export default function RequestPages() {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
 
-  const { data: requestRides } = useGetAllRequestQuery()
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(searchTerm)
+    }, 400)
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm])
+
+  const { data: requestRides } = useGetAllRequestQuery({
+    status: statusFilter === 'all' ? undefined : statusFilter,
+    search: debouncedSearch
+  })
 
   const statusCounts = {
     all: requestRides?.length ?? 0,
@@ -167,7 +180,6 @@ export default function RequestPages() {
           </Card>
         </div>
 
-        {/* Filters */}
         <Card>
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row gap-4">
@@ -190,11 +202,11 @@ export default function RequestPages() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="accepted">Accepted</SelectItem>
-                    <SelectItem value="in progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Accepted">Accepted</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                    <SelectItem value="Cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -202,89 +214,106 @@ export default function RequestPages() {
           </CardContent>
         </Card>
 
-        {/* Request List */}
         <div className="space-y-4">
-          {requestRides?.map((request) => (
-            <Card key={request.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row gap-6">
-                  {/* Left Side - Request Details */}
-                  <div className="flex-1 space-y-3">
-                    {/* Header Row */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-gray-900">Request #{request.id}</h3>
-                        <Badge className={getStatusColor(request.status)}>
-                          {request.status}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Clock className="h-4 w-4" />
-                        {formatDate(request.created_at)} at {formatTime(request.created_at)}
-                      </div>
-                    </div>
-
-                    {/* Route Info */}
-                    <div className="space-y-2">
-                      <div className="flex items-start gap-2">
-                        <div className="h-3 w-3 rounded-full bg-green-500 mt-1 flex-shrink-0"></div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Pickup</p>
-                          <p className="text-sm text-gray-600">{request.pickup}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="h-3 w-3 rounded-full bg-red-500 mt-1 flex-shrink-0"></div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Destination</p>
-                          <p className="text-sm text-gray-600">{request.destination}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* User Info */}
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-blue-500" />
-                        <span className="text-gray-600">Rider:</span>
-                        <span className="font-medium">{request.rider_id}</span>
-                      </div>
-                      {request.driver_id && (
+          {requestRides && requestRides.length > 0 ? (
+            requestRides.map((request) => (
+              <Card key={request.id} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex flex-col lg:flex-row gap-6">
+                    {/* Left Side - Request Details */}
+                    <div className="flex-1 space-y-3">
+                      {/* Header Row */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-green-500" />
-                          <span className="text-gray-600">Driver:</span>
-                          <span className="font-medium">{request.driver_id}</span>
+                          <h3 className="font-semibold text-gray-900">Request #{request.id}</h3>
+                          <Badge className={getStatusColor(request.status)}>
+                            {request.status}
+                          </Badge>
                         </div>
-                      )}
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <Clock className="h-4 w-4" />
+                          {formatDate(request.created_at)} at {formatTime(request.created_at)}
+                        </div>
+                      </div>
+
+                      {/* Route Info */}
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-2">
+                          <div className="h-3 w-3 rounded-full bg-green-500 mt-1 flex-shrink-0"></div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">Pickup</p>
+                            <p className="text-sm text-gray-600">{request.pickup}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="h-3 w-3 rounded-full bg-red-500 mt-1 flex-shrink-0"></div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">Destination</p>
+                            <p className="text-sm text-gray-600">{request.destination}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* User Info */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-blue-500" />
+                          <span className="text-gray-600">Rider:</span>
+                          <span className="font-medium">{request.rider.full_name}</span>
+                        </div>
+                        {request.driver_id && (
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-green-500" />
+                            <span className="text-gray-600">Driver:</span>
+                            <span className="font-medium">{request.driver.profiles.full_name}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* View Details Button */}
+                      <div className="pt-2">
+                        <button
+                          onClick={() => { router.push(`/request/${request.id}`) }}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </div>
 
-                    {/* View Details Button */}
-                    <div className="pt-2">
-                      <button
-                        onClick={() => { }}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        View Details
-                      </button>
+                    {/* Right Side - Map Image */}
+                    <div className="lg:w-80 flex-shrink-0">
+                      <div className="rounded-lg overflow-hidden border border-gray-200 h-full min-h-[200px]">
+                        <Image
+                          src={`https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=600&height=400&center=lonlat%3A${request.pickup_longitude}%2C${request.pickup_latitude}&zoom=13&marker=lonlat%3A${request.pickup_longitude}%2C${request.pickup_latitude}%3Bcolor%3A%2322c55e%3Bsize%3Alarge%3Btext%3AA%7Clonlat%3A${request.destination_longitude}%2C${request.destination_latitude}%3Bcolor%3A%23ef4444%3Bsize%3Alarge%3Btext%3AB&apiKey=${GEOAPIFY_KEY}`}
+                          alt={`Map for request ${request.id}`}
+                          width={320}
+                          height={240}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
                   </div>
-
-                  {/* Right Side - Map Image */}
-                  <div className="lg:w-80 flex-shrink-0">
-                    <div className="rounded-lg overflow-hidden border border-gray-200 h-full min-h-[200px]">
-                      <Image
-                        src={`https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=600&height=400&center=lonlat%3A${request.pickup_longitude}%2C${request.pickup_latitude}&zoom=13&marker=lonlat%3A${request.pickup_longitude}%2C${request.pickup_latitude}%3Bcolor%3A%2322c55e%3Bsize%3Alarge%3Btext%3AA%7Clonlat%3A${request.destination_longitude}%2C${request.destination_latitude}%3Bcolor%3A%23ef4444%3Bsize%3Alarge%3Btext%3AB&apiKey=${GEOAPIFY_KEY}`}
-                        alt={`Map for request ${request.id}`}
-                        width={320}
-                        height={240}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Card>
+              <CardContent className="p-12">
+                <div className="flex flex-col items-center justify-center text-center space-y-4">
+                  <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center">
+                    <MapPin className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-gray-900">No ride requests found</h3>
+                    <p className="text-sm text-gray-500 max-w-sm">
+                      There are no ride requests to display at the moment. Check back later or try adjusting your filters.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )}
         </div>
       </div>
     </>
