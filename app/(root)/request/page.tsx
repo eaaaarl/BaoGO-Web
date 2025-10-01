@@ -2,81 +2,15 @@
 import React, { useState } from 'react'
 import { Breadcrumb, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbLink, BreadcrumbList, BreadcrumbItem } from '@/components/ui/breadcrumb'
 import { SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { MapPin, Clock, User, Phone, Filter, Search, Eye, XCircle, CheckCircle, Car, AlertCircle, BarChart3 } from 'lucide-react'
+import { Clock, User, Filter, Search, XCircle, CheckCircle, Car, AlertCircle, BarChart3 } from 'lucide-react'
+import { useGetAllRequestQuery } from '@/features/request/api/requestApi'
+import Image from 'next/image'
+import { GEOAPIFY_KEY } from '@/constant/geoapify'
 
-// Mock data based on your RideRequest interface
-const mockRideRequests = [
-  {
-    id: "req_001",
-    rider_id: "rider_123",
-    driver_id: "driver_456",
-    pickup: "SM City Davao, J.P. Laurel Ave, Bajada, Davao City",
-    destination: "Davao International Airport, Davao City",
-    pickup_latitude: 7.0731,
-    pickup_longitude: 125.6128,
-    destination_latitude: 7.1254,
-    destination_longitude: 125.6456,
-    status: "Accepted",
-    created_at: "2024-01-15T08:30:00Z"
-  },
-  {
-    id: "req_002",
-    rider_id: "rider_789",
-    driver_id: "",
-    pickup: "University of the Philippines Mindanao, Bago Oshiro, Tugbok",
-    destination: "Abreeza Mall, J.P. Laurel Ave, Davao City",
-    pickup_latitude: 7.0547,
-    pickup_longitude: 125.5721,
-    destination_latitude: 7.0669,
-    destination_longitude: 125.6089,
-    status: "Pending",
-    created_at: "2024-01-15T09:15:00Z"
-  },
-  {
-    id: "req_003",
-    rider_id: "rider_456",
-    driver_id: "driver_789",
-    pickup: "People's Park, Davao City",
-    destination: "Roxas Night Market, Roxas Ave, Davao City",
-    pickup_latitude: 7.0719,
-    pickup_longitude: 125.6147,
-    destination_latitude: 7.0697,
-    destination_longitude: 125.6181,
-    status: "Completed",
-    created_at: "2024-01-15T07:45:00Z"
-  },
-  {
-    id: "req_004",
-    rider_id: "rider_321",
-    driver_id: "driver_123",
-    pickup: "Matina Town Square, McArthur Highway, Davao City",
-    destination: "SM Lanang Premier, J.P. Laurel Ave, Davao City",
-    pickup_latitude: 7.0431,
-    pickup_longitude: 125.6247,
-    destination_latitude: 7.0982,
-    destination_longitude: 125.6278,
-    status: "In Progress",
-    created_at: "2024-01-15T10:00:00Z"
-  },
-  {
-    id: "req_005",
-    rider_id: "rider_654",
-    driver_id: "",
-    pickup: "Davao Medical School Foundation, Bajada, Davao City",
-    destination: "Victoria Plaza, R. Magsaysay Ave, Davao City",
-    pickup_latitude: 7.0658,
-    pickup_longitude: 125.6089,
-    destination_latitude: 7.0743,
-    destination_longitude: 125.6125,
-    status: "Cancelled",
-    created_at: "2024-01-15T06:30:00Z"
-  }
-]
 
 const getStatusColor = (status) => {
   switch (status.toLowerCase()) {
@@ -110,26 +44,16 @@ const formatDate = (dateString) => {
 export default function RequestPages() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [selectedRequest, setSelectedRequest] = useState(null)
 
-  // Filter requests based on search and status
-  const filteredRequests = mockRideRequests.filter(request => {
-    const matchesSearch = request.pickup.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.id.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStatus = statusFilter === 'all' || request.status.toLowerCase() === statusFilter.toLowerCase()
-
-    return matchesSearch && matchesStatus
-  })
+  const { data: requestRides } = useGetAllRequestQuery()
 
   const statusCounts = {
-    all: mockRideRequests.length,
-    pending: mockRideRequests.filter(r => r.status.toLowerCase() === 'pending').length,
-    accepted: mockRideRequests.filter(r => r.status.toLowerCase() === 'accepted').length,
-    'in progress': mockRideRequests.filter(r => r.status.toLowerCase() === 'in progress').length,
-    completed: mockRideRequests.filter(r => r.status.toLowerCase() === 'completed').length,
-    cancelled: mockRideRequests.filter(r => r.status.toLowerCase() === 'cancelled').length
+    all: requestRides?.length ?? 0,
+    pending: requestRides?.filter(r => r.status.toLowerCase() === 'pending').length,
+    accepted: requestRides?.filter(r => r.status.toLowerCase() === 'accepted').length,
+    'in progress': requestRides?.filter(r => r.status.toLowerCase() === 'in progress').length,
+    completed: requestRides?.filter(r => r.status.toLowerCase() === 'completed').length,
+    cancelled: requestRides?.filter(r => r.status.toLowerCase() === 'cancelled').length
   }
 
   return (
@@ -280,10 +204,11 @@ export default function RequestPages() {
 
         {/* Request List */}
         <div className="space-y-4">
-          {filteredRequests.map((request) => (
+          {requestRides?.map((request) => (
             <Card key={request.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Left Side - Request Details */}
                   <div className="flex-1 space-y-3">
                     {/* Header Row */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -332,112 +257,35 @@ export default function RequestPages() {
                         </div>
                       )}
                     </div>
+
+                    {/* View Details Button */}
+                    <div className="pt-2">
+                      <button
+                        onClick={() => { }}
+                        className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        View Details
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-2 lg:ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedRequest(request)}
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Details
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                    >
-                      <MapPin className="h-4 w-4 mr-2" />
-                      View Map
-                    </Button>
+                  {/* Right Side - Map Image */}
+                  <div className="lg:w-80 flex-shrink-0">
+                    <div className="rounded-lg overflow-hidden border border-gray-200 h-full min-h-[200px]">
+                      <Image
+                        src={`https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=600&height=400&center=lonlat%3A${request.pickup_longitude}%2C${request.pickup_latitude}&zoom=13&marker=lonlat%3A${request.pickup_longitude}%2C${request.pickup_latitude}%3Bcolor%3A%2322c55e%3Bsize%3Alarge%3Btext%3AA%7Clonlat%3A${request.destination_longitude}%2C${request.destination_latitude}%3Bcolor%3A%23ef4444%3Bsize%3Alarge%3Btext%3AB&apiKey=${GEOAPIFY_KEY}`}
+                        alt={`Map for request ${request.id}`}
+                        width={320}
+                        height={240}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
-
-          {filteredRequests.length === 0 && (
-            <Card>
-              <CardContent className="p-12 text-center">
-                <div className="text-gray-400 mb-4">
-                  <Search className="h-12 w-12 mx-auto" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No requests found</h3>
-                <p className="text-gray-600">Try adjusting your search or filter criteria.</p>
-              </CardContent>
-            </Card>
-          )}
         </div>
-
-        {/* Request Details Modal/Card */}
-        {selectedRequest && (
-          <Card className="fixed inset-4 z-50 overflow-auto bg-white shadow-2xl">
-            <CardHeader className="border-b">
-              <div className="flex items-center justify-between">
-                <CardTitle>Request Details - #{selectedRequest.id}</CardTitle>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedRequest(null)}
-                >
-                  ✕
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-3">Request Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><span className="text-gray-600">Request ID:</span> {selectedRequest.id}</div>
-                    <div><span className="text-gray-600">Status:</span>
-                      <Badge className={`ml-2 ${getStatusColor(selectedRequest.status)}`}>
-                        {selectedRequest.status}
-                      </Badge>
-                    </div>
-                    <div><span className="text-gray-600">Created:</span> {formatDate(selectedRequest.created_at)} at {formatTime(selectedRequest.created_at)}</div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3">Participants</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><span className="text-gray-600">Rider ID:</span> {selectedRequest.rider_id}</div>
-                    <div><span className="text-gray-600">Driver ID:</span> {selectedRequest.driver_id || 'Not assigned'}</div>
-                  </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <h4 className="font-semibold mb-3">Route Details</h4>
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-                      <div className="h-3 w-3 rounded-full bg-green-500 mt-1"></div>
-                      <div>
-                        <p className="font-medium text-green-800">Pickup Location</p>
-                        <p className="text-green-700">{selectedRequest.pickup}</p>
-                        <p className="text-sm text-green-600">
-                          Coordinates: {selectedRequest.pickup_latitude}, {selectedRequest.pickup_longitude}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
-                      <div className="h-3 w-3 rounded-full bg-red-500 mt-1"></div>
-                      <div>
-                        <p className="font-medium text-red-800">Destination</p>
-                        <p className="text-red-700">{selectedRequest.destination}</p>
-                        <p className="text-sm text-red-600">
-                          Coordinates: {selectedRequest.destination_latitude}, {selectedRequest.destination_longitude}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </>
   )
