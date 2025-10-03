@@ -1,3 +1,5 @@
+'use client'
+
 import { useAppDispatch } from '@/lib/redux/hooks'
 import { setClearUserSession, setUserSession } from '@/lib/redux/state/authSlice'
 import { supabase } from '@/lib/supabase'

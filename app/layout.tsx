@@ -1,13 +1,7 @@
-"use client";
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Provider as ReduxProvider } from 'react-redux'
-import { persistStore } from "redux-persist";
-import store from "@/lib/redux/store";
-import { Toaster } from "@/components/ui/sonner";
-import { PersistGate } from "redux-persist/integration/react";
-import AuthProvider from "@/components/AuthProvider";
+import Providers from "@/components/Provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,7 +19,6 @@ const geistMono = Geist_Mono({
 //   description: "BaoGO: a localized hailing app",
 // };
 
-const persistor = persistStore(store);
 
 export default function RootLayout({
   children,
@@ -40,15 +33,9 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
       >
-        <ReduxProvider store={store}>
-          <PersistGate persistor={persistor} loading={null}>
-            <AuthProvider>
-              <Toaster />
-              {children}
-            </AuthProvider>
-          </PersistGate>
-        </ReduxProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
