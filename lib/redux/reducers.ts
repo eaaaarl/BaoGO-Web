@@ -5,6 +5,7 @@ import { rideApi } from "@/features/ride/api/rideApi";
 import { driverApi } from "@/features/driver/api/driverApi";
 import { userApi } from "@/features/user/api/userApi";
 import { requestApi } from "@/features/request/api/requestApi";
+import { dashboardApi } from "@/features/dashboard/api/dashboardApi";
 
 const rootReducer = combineReducers({
   // SLICE
@@ -17,9 +18,17 @@ const rootReducer = combineReducers({
   [driverApi.reducerPath]: driverApi.reducer,
   [userApi.reducerPath]: userApi.reducer,
   [requestApi.reducerPath]: requestApi.reducer,
+  [dashboardApi.reducerPath]: dashboardApi.reducer,
 });
 
-export const apis = [authApi, rideApi, driverApi, userApi, requestApi];
+export const apis = [
+  authApi,
+  rideApi,
+  driverApi,
+  userApi,
+  requestApi,
+  dashboardApi,
+];
 export const apisReducerPath = apis.map((api) => api.reducerPath);
 
 export default rootReducer;
