@@ -1,87 +1,10 @@
+'use client'
+
 import React from 'react';
-import { Users, Car, TrendingUp, DollarSign, MapPin, Clock, AlertCircle, CheckCircle, Activity, ArrowUp, ArrowDown } from 'lucide-react';
+import { Users, Car, TrendingUp, MapPin, Clock, AlertCircle, CheckCircle, Activity, ArrowUp, ArrowDown } from 'lucide-react';
+import { useGetDriversQuery, useGetRequestRideQuery, useGetRidesQuery, useGetUsersQuery } from '@/features/dashboard/api/dashboardApi';
 
 export default function Dashboard() {
-  // Mock data
-  const stats = [
-    {
-      title: "Total Revenue",
-      value: "₱124,592",
-      change: "+12.5%",
-      trend: "up",
-      icon: DollarSign,
-      color: "text-green-600",
-      bgColor: "bg-green-100",
-    },
-    {
-      title: "Active Rides",
-      value: "48",
-      change: "+8.2%",
-      trend: "up",
-      icon: Car,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
-    },
-    {
-      title: "Total Users",
-      value: "2,847",
-      change: "+23.1%",
-      trend: "up",
-      icon: Users,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
-    },
-  ];
-
-  const recentRides = [
-    {
-      id: "RQ-1234",
-      rider: "John Doe",
-      driver: "Jane Smith",
-      pickup: "Makati Ave, Makati City",
-      destination: "BGC, Taguig City",
-      status: "completed",
-      time: "10 mins ago",
-      fare: "₱250",
-    },
-    {
-      id: "RQ-1235",
-      rider: "Maria Garcia",
-      driver: "Pedro Santos",
-      pickup: "Ortigas Center",
-      destination: "Quezon City",
-      status: "in-progress",
-      time: "Just now",
-      fare: "₱180",
-    },
-    {
-      id: "RQ-1236",
-      rider: "Michael Chen",
-      driver: "Not assigned",
-      pickup: "Manila",
-      destination: "Pasig City",
-      status: "pending",
-      time: "2 mins ago",
-      fare: "₱150",
-    },
-    {
-      id: "RQ-1237",
-      rider: "Sarah Johnson",
-      driver: "Carlos Reyes",
-      pickup: "Alabang",
-      destination: "Makati CBD",
-      status: "completed",
-      time: "25 mins ago",
-      fare: "₱320",
-    },
-  ];
-
-  const quickStats = [
-    { label: "Pending Requests", value: "12", icon: Clock, color: "text-yellow-600" },
-    { label: "Active Drivers", value: "156", icon: Activity, color: "text-green-600" },
-    { label: "Completed Today", value: "89", icon: CheckCircle, color: "text-blue-600" },
-    { label: "Issues Reported", value: "3", icon: AlertCircle, color: "text-red-600" },
-  ];
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -93,19 +16,86 @@ export default function Dashboard() {
     return styles[status] || styles.pending;
   };
 
+  const { data: users } = useGetUsersQuery()
+  const { data: rides } = useGetRidesQuery()
+  const { data: drivers } = useGetDriversQuery()
+  const { data: requestRides } = useGetRequestRideQuery()
+
+  const completedRides = rides?.filter(r => r.status === 'completed').length || 0
+  const activeRides = rides?.filter(ar => ar.status === 'started').length || 0
+  const totalUsers = users?.length || 0
+  const activeDrivers = drivers?.filter(ad => ad.is_available === true).length || 0
+  const pendingRequestRide = requestRides?.filter(prr => prr.status === 'Pending').length || 0
+  const totalRides = rides?.length || 0
+
+  const calculateChange = (current, previous) => {
+    if (!previous || previous === 0) return { change: "N/A", trend: "neutral" };
+    const percentChange = ((current - previous) / previous) * 100;
+    return {
+      change: `${percentChange > 0 ? '+' : ''}${percentChange.toFixed(1)}%`,
+      trend: percentChange >= 0 ? "up" : "down"
+    };
+  };
+
+  // Get last month's data (you'll need to filter by date range)
+  const lastMonthStart = new Date();
+  lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
+  lastMonthStart.setDate(1);
+  const lastMonthEnd = new Date();
+  lastMonthEnd.setDate(0);
+
+  const lastMonthRides = rides?.filter(r => {
+    const rideDate = new Date(r.created_at);
+    return rideDate >= lastMonthStart && rideDate <= lastMonthEnd && r.status === 'started';
+  }).length || 0;
+
+  const lastMonthUsers = users?.filter(u => {
+    const userDate = new Date(u.created_at);
+    return userDate >= lastMonthStart && userDate <= lastMonthEnd;
+  }).length || 0;
+
+  const activeRidesChange = calculateChange(activeRides, lastMonthRides);
+  const totalUsersChange = calculateChange(totalUsers - lastMonthUsers, lastMonthUsers);
+
+  const stats = [
+    {
+      title: "Active Rides",
+      value: activeRides,
+      change: activeRidesChange.change,
+      trend: activeRidesChange.trend,
+      icon: Car,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
+    },
+    {
+      title: "Total Users",
+      value: totalUsers,
+      change: totalUsersChange.change,
+      trend: totalUsersChange.trend,
+      icon: Users,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
+    },
+  ];
+
+  const quickStats = [
+    { label: "Pending Requests", value: pendingRequestRide, icon: Clock, color: "text-yellow-600" },
+    { label: "Active Drivers", value: activeDrivers, icon: Activity, color: "text-green-600" },
+    { label: "Completed Today", value: completedRides, icon: CheckCircle, color: "text-blue-600" },
+    { label: "Issues Reported", value: "0", icon: AlertCircle, color: "text-red-600" },
+  ];
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-6 py-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back! Here's what's happening today.</p>
+          <p className="text-gray-600 mt-1">Welcome back! Here&apos;s what&apos;s happening today.</p>
         </div>
       </header>
 
       <div className="p-6 space-y-6">
-        {/* Top Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -165,7 +155,7 @@ export default function Dashboard() {
             </div>
             <div className="p-6">
               <div className="space-y-3">
-                {recentRides.map((ride) => (
+                {rides?.map((ride) => (
                   <div key={ride.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
@@ -177,18 +167,18 @@ export default function Dashboard() {
                       <div className="flex items-start gap-2 text-sm">
                         <MapPin className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-gray-900 font-medium">{ride.pickup}</p>
-                          <p className="text-gray-600">→ {ride.destination}</p>
+                          <p className="text-gray-900 font-medium">{ride.pickup_location}</p>
+                          <p className="text-gray-600">→ {ride.destination_location}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span>Rider: {ride.rider}</span>
-                        {ride.driver !== "Not assigned" && <span>Driver: {ride.driver}</span>}
+                        <span>Rider: {ride.rider_id}</span>
+                        <span>Driver: {ride.driver_id}</span>
                       </div>
                     </div>
                     <div className="text-right space-y-1 ml-4">
-                      <p className="text-lg font-bold text-gray-900">{ride.fare}</p>
-                      <p className="text-xs text-gray-500">{ride.time}</p>
+                      {/*  <p className="text-lg font-bold text-gray-900">{ride.fare}</p> */}
+                      <p className="text-xs text-gray-500">{ride.created_at}</p>
                     </div>
                   </div>
                 ))}
@@ -204,52 +194,33 @@ export default function Dashboard() {
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-semibold flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-green-600" />
-                Today's Summary
+                Today&apos;s Summary
               </h2>
             </div>
             <div className="p-6">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Total Rides</span>
-                    <span className="font-semibold text-gray-900">89</span>
+                    <span className="text-gray-600">Completed Rides</span>
+                    <span className="font-semibold text-gray-900">{completedRides}/{totalRides}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: "75%" }}></div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Revenue</span>
-                    <span className="font-semibold text-gray-900">₱18,450</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{ width: "62%" }}></div>
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${totalRides > 0 ? (completedRides / totalRides) * 100 : 0}%` }}></div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Active Drivers</span>
-                    <span className="font-semibold text-gray-900">156/200</span>
+                    <span className="font-semibold text-gray-900">{activeDrivers}/{drivers?.length || 0}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: "78%" }}></div>
+                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${drivers?.length ? (activeDrivers / drivers.length) * 100 : 0}%` }}></div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Customer Satisfaction</span>
-                    <span className="font-semibold text-gray-900">4.8/5.0</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-yellow-500 h-2 rounded-full" style={{ width: "96%" }}></div>
-                  </div>
-                </div>
 
-                <div className="pt-4 border-t">
+                {/*  <div className="pt-4 border-t">
                   <h4 className="text-sm font-semibold text-gray-900 mb-3">Peak Hours Today</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -261,7 +232,7 @@ export default function Dashboard() {
                       <span className="font-medium text-gray-900">28 rides</span>
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
