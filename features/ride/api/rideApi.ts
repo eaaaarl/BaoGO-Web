@@ -9,7 +9,11 @@ export const rideApi = createApi({
     getAllRides: builder.query<Ride[], void>({
       queryFn: async () => {
         try {
-          const { data, error } = await supabase.from("rides").select("*");
+          const { data, error } = await supabase
+            .from("rides")
+            .select(
+              "*, rider:profiles(*), driver:driver_profiles(*, profiles(*))"
+            );
 
           if (error) {
             return {
