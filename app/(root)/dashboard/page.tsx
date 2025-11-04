@@ -172,8 +172,8 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span>Rider: {ride.rider_id}</span>
-                        <span>Driver: {ride.driver_id}</span>
+                        <span>Rider: {ride.rider.full_name}</span>
+                        <span>Driver: {ride.driver.profiles.full_name}</span>
                       </div>
                     </div>
                     <div className="text-right space-y-1 ml-4">
