@@ -239,7 +239,7 @@ export default function Ride() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center justify-between">
               <div>
@@ -288,7 +288,7 @@ export default function Ride() {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          {/*   <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Est. Revenue</p>
@@ -298,7 +298,7 @@ export default function Ride() {
                 <DollarSign className="w-6 h-6 text-green-600" />
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Filters */}
@@ -379,8 +379,8 @@ export default function Ride() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">{ride.id}</div>
-                          <div className="text-sm text-gray-500">Driver: {ride.driver_id}</div>
-                          <div className="text-sm text-gray-500">Rider: {ride.rider_id}</div>
+                          <div className="text-sm text-gray-500">Driver: {ride.driver.profiles.full_name}</div>
+                          <div className="text-sm text-gray-500">Rider: {ride.rider.full_name}</div>
                           <div className="text-xs text-gray-400">{formatDate(ride.created_at)}</div>
                         </div>
                       </td>
@@ -407,7 +407,7 @@ export default function Ride() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">₱{estimatedFare.toFixed(2)}</div>
+                        {/*   <div className="text-sm text-gray-900">₱{estimatedFare.toFixed(2)}</div> */}
                         <div className="text-sm text-gray-500">{distance}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

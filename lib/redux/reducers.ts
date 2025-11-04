@@ -9,7 +9,6 @@ import { dashboardApi } from "@/features/dashboard/api/dashboardApi";
 
 const rootReducer = combineReducers({
   // SLICE
-
   auth: authReducer,
 
   // RTK QUERY

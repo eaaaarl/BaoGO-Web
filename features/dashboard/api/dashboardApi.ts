@@ -1,4 +1,4 @@
-import { Driver, DriverProfile } from "@/features/driver/api/interface";
+import { Driver } from "@/features/driver/api/interface";
 import { RideRequest } from "@/features/request/api/interface";
 import { Ride } from "@/features/ride/api/interface";
 import { Profile } from "@/features/user/api/interface";
@@ -12,7 +12,11 @@ export const dashboardApi = createApi({
     getRides: builder.query<Ride[], void>({
       queryFn: async () => {
         try {
-          const { data, error } = await supabase.from("rides").select("*");
+          const { data, error } = await supabase
+            .from("rides")
+            .select(
+              "*, rider:profiles(*), driver:driver_profiles(*, profiles(*))"
+            );
 
           if (error) {
             return {

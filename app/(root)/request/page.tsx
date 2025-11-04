@@ -285,7 +285,7 @@ export default function RequestPages() {
                     <div className="lg:w-80 flex-shrink-0">
                       <div className="rounded-lg overflow-hidden border border-gray-200 h-full min-h-[200px]">
                         <Image
-                          src={`https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=600&height=400&center=lonlat%3A${request.pickup_longitude}%2C${request.pickup_latitude}&zoom=13&marker=lonlat%3A${request.pickup_longitude}%2C${request.pickup_latitude}%3Bcolor%3A%2322c55e%3Bsize%3Alarge%3Btext%3AA%7Clonlat%3A${request.destination_longitude}%2C${request.destination_latitude}%3Bcolor%3A%23ef4444%3Bsize%3Alarge%3Btext%3AB&apiKey=${GEOAPIFY_KEY}`}
+                          src={`https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=600&height=400&center=lonlat:${(request.pickup_longitude + request.destination_longitude) / 2},${(request.pickup_latitude + request.destination_latitude) / 2}&zoom=${Math.max(1, Math.min(14, 12 - Math.floor(Math.log2(Math.max(Math.abs(request.pickup_longitude - request.destination_longitude), Math.abs(request.pickup_latitude - request.destination_latitude)) * 100))))}&marker=lonlat:${request.pickup_longitude},${request.pickup_latitude};color:%2322c55e;size:large;text:A|lonlat:${request.destination_longitude},${request.destination_latitude};color:%23ef4444;size:large;text:B&apiKey=${GEOAPIFY_KEY}`}
                           alt={`Map for request ${request.id}`}
                           width={320}
                           height={240}
