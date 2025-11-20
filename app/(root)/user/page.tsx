@@ -6,8 +6,10 @@ import { Input } from '@/components/ui/input'
 import { SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Profile } from '@/features/user/api/interface'
-import { useGetAllUsersQuery } from '@/features/user/api/userApi'
+import { useActivateUserProfileMutation, useGetAllUsersQuery, useSuspendUserProfileMutation } from '@/features/user/api/userApi'
+import UserActivateModal from '@/features/user/components/UserActivateModal'
 import UserEditModal from '@/features/user/components/UserEditModal'
+import UserSuspendModal from '@/features/user/components/UserSuspendModal'
 import UserViewModal from '@/features/user/components/UserViewModal'
 import { userColumn } from '@/features/user/utils/userTableData'
 import {
@@ -19,6 +21,7 @@ import {
 } from '@tanstack/react-table'
 import { Search } from 'lucide-react'
 import React, { useState } from 'react'
+import { toast } from 'sonner'
 
 export default function UserPage() {
   const [globalFilter, setGlobalFilter] = useState("")
@@ -30,6 +33,11 @@ export default function UserPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [profileToEdit, setProfileToEdit] = useState<Profile | null>(null)
 
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
+  const [profileToSuspend, setProfileToSuspend] = useState<Profile | null>(null)
+
+  const [activateDialogOpen, setActivateDialogOpen] = useState(false)
+  const [profileToActivate, setProfileToActivate] = useState<Profile | null>(null)
 
   const handleOpenProfileDialog = (profile: Profile) => {
     setViewDialogOpen(true)
@@ -41,12 +49,48 @@ export default function UserPage() {
     setProfileToEdit(profile)
   }
 
+  const handleOpenSuspendProfileDialog = (profile: Profile) => {
+    setSuspendDialogOpen(true)
+    setProfileToSuspend(profile)
+  }
+
+  const handleOpenActivateProfileDialog = (profile: Profile) => {
+    setActivateDialogOpen(true)
+    setProfileToActivate(profile)
+  }
+
+  // Mutation 
+  const [suspendUserProfile] = useSuspendUserProfileMutation()
+  const [activateUserProfile] = useActivateUserProfileMutation()
+  // Suspend User Mutation
+  const handleSuspendProfile = async (profile: Profile, reason?: string) => {
+    try {
+      const res = await suspendUserProfile({ userId: profile.id })
+      toast.success(res.data?.meta.message)
+    } catch (error) {
+      console.log('error', error)
+      toast.error('Failed to suspend user')
+    }
+  }
+
+  const handleActivateUserProfile = async (profile: Profile) => {
+    try {
+      const res = await activateUserProfile({ userId: profile.id })
+      toast.success(res.data?.meta.message)
+    } catch (error) {
+      console.log('error', error)
+      toast.error('Failed to activate user')
+
+    }
+  }
 
   const table = useReactTable({
     data: users ?? [],
     columns: userColumn({
       onView: handleOpenProfileDialog,
       onEdit: handleOpenEditProfileDialog,
+      onSuspend: handleOpenSuspendProfileDialog,
+      onActivate: handleOpenActivateProfileDialog
     }),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -202,6 +246,21 @@ export default function UserPage() {
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
         user={profileToEdit}
+      />
+
+      <UserSuspendModal
+        onClose={() => setSuspendDialogOpen(false)}
+        open={suspendDialogOpen}
+        profile={profileToSuspend!}
+        onConfirm={handleSuspendProfile}
+      />
+
+      <UserActivateModal
+
+        onClose={() => setActivateDialogOpen(false)}
+        open={activateDialogOpen}
+        profile={profileToActivate!}
+        onConfirm={handleActivateUserProfile}
       />
     </>
   )

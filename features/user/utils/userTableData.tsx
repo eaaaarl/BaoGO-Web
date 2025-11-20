@@ -1,5 +1,4 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, User } from 'lucide-react';
@@ -9,10 +8,13 @@ import Image from "next/image";
 interface userColumnProps {
   onView: (profile: Profile) => void;
   onEdit: (profile: Profile) => void;
+  onSuspend: (profile: Profile) => void;
+  /* onDelete: (profile: Profile) => void; */
+  onActivate: (profile: Profile) => void;
 }
 
 const columnHelper = createColumnHelper<Profile>();
-export const userColumn = ({ onView, onEdit }: userColumnProps) => {
+export const userColumn = ({ onView, onEdit, onSuspend, onActivate }: userColumnProps) => {
   return [
     columnHelper.accessor('full_name', {
       header: () => 'User',
@@ -193,25 +195,15 @@ export const userColumn = ({ onView, onEdit }: userColumnProps) => {
                 Edit User
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {profile.userRole === 'Driver' && (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      console.log('View driver stats:', profile.id);
-                    }}
-                  >
-                    Driver Statistics
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem
-                onClick={() => {
-                  console.log('Suspend user:', profile.id);
-                }}
-              >
-                Suspend Account
-              </DropdownMenuItem>
+              {profile.status === 'suspended' ? (
+                <DropdownMenuItem onClick={() => onActivate(profile)}>
+                  Activate Account
+                </DropdownMenuItem>
+              ) : profile.status === 'active' || profile.status === 'inactive' ? (
+                <DropdownMenuItem onClick={() => onSuspend(profile)}>
+                  Suspend Account
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem
                 className="text-red-600"
                 onClick={() => {
@@ -221,7 +213,7 @@ export const userColumn = ({ onView, onEdit }: userColumnProps) => {
                 Delete User
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu >
         );
       },
     }),
