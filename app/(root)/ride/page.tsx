@@ -40,7 +40,6 @@ const statusColors = {
 }
 
 
-// Helper function to calculate distance between two points
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
   const R = 6371; // Radius of the Earth in kilometers
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -54,7 +53,6 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
   return `${distance.toFixed(1)} km`;
 }
 
-// Helper function to format date
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleString('en-PH', {
@@ -67,14 +65,12 @@ const formatDate = (dateString: string): string => {
   });
 }
 
-// Helper function to calculate estimated fare (you can adjust this logic)
 const calculateEstimatedFare = (distance: number): number => {
   const baseFare = 50;
   const ratePerKm = 15;
   return baseFare + (distance * ratePerKm);
 }
 
-// Helper function to get status display text
 const getStatusDisplay = (status: string): string => {
   const statusMap: { [key: string]: string } = {
     'requested': 'Pending',
@@ -86,7 +82,6 @@ const getStatusDisplay = (status: string): string => {
   return statusMap[status] || status.charAt(0).toUpperCase() + status.slice(1);
 }
 
-// Helper function to get normalized status for filtering
 const getNormalizedStatus = (status: string): string => {
   const statusMap: { [key: string]: string } = {
     'requested': 'pending',
@@ -128,7 +123,6 @@ export default function Ride() {
     const cancelled = rides.filter(r => r.status === 'cancelled')
     const pending = rides.filter(r => r.status === 'requested')
 
-    // Calculate total estimated revenue for completed rides
     const totalRevenue = completed.reduce((sum, ride) => {
       const distance = parseFloat(calculateDistance(
         ride.pickup_latitude,
@@ -238,7 +232,6 @@ export default function Ride() {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center justify-between">
@@ -301,7 +294,6 @@ export default function Ride() {
           </div> */}
         </div>
 
-        {/* Filters */}
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1">
@@ -333,7 +325,6 @@ export default function Ride() {
           </div>
         </div>
 
-        {/* Rides Table */}
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Recent Rides</h2>
@@ -352,12 +343,12 @@ export default function Ride() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Distance & Est. Fare
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  </th> */}
+                  {/*   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Timeline
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
@@ -406,10 +397,10 @@ export default function Ride() {
                           {getStatusDisplay(ride.status)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {/*   <div className="text-sm text-gray-900">₱{estimatedFare.toFixed(2)}</div> */}
+                      {/*       <td className="px-6 py-4 whitespace-nowrap">
+                         <div className="text-sm text-gray-900">₱{estimatedFare.toFixed(2)}</div> 
                         <div className="text-sm text-gray-500">{distance}</div>
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-xs text-gray-500 space-y-1">
                           <div>Requested: {formatDate(ride.requested_at)}</div>

@@ -5,6 +5,7 @@ import { Profile } from "./interface";
 export const userApi = createApi({
   reducerPath: "userApi",
   baseQuery: fakeBaseQuery(),
+  tagTypes: ["getAllUser"],
   endpoints: (builder) => ({
     getAllUsers: builder.query<Profile[], void>({
       queryFn: async () => {
@@ -36,8 +37,47 @@ export const userApi = createApi({
           };
         }
       },
+      providesTags: ["getAllUser"],
+    }),
+
+    editUserProfile: builder.mutation<
+      {
+        meta: {
+          success: boolean;
+          message: string;
+        };
+      },
+      { full_name: string; phone_number: string; user_id: string }
+    >({
+      queryFn: async ({ full_name, phone_number, user_id }) => {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            full_name: full_name,
+            phone_number: phone_number,
+          })
+          .eq("id", user_id);
+
+        if (error) {
+          return {
+            error: {
+              message: error.message,
+            },
+          };
+        }
+
+        return {
+          data: {
+            meta: {
+              success: true,
+              message: "Profiles updated",
+            },
+          },
+        };
+      },
+      invalidatesTags: ["getAllUser"],
     }),
   }),
 });
 
-export const { useGetAllUsersQuery } = userApi;
+export const { useGetAllUsersQuery, useEditUserProfileMutation } = userApi;
