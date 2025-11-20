@@ -3,15 +3,19 @@
 import { Breadcrumb, BreadcrumbItem, BreadcrumbPage, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from '@/components/ui/select'
 import { SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Profile } from '@/features/user/api/interface'
-import { useActivateUserProfileMutation, useGetAllUsersQuery, useSuspendUserProfileMutation } from '@/features/user/api/userApi'
+import { useActivateUserProfileMutation, useDeleteUserProfileMutation, useGetAllUsersQuery, useSuspendUserProfileMutation } from '@/features/user/api/userApi'
 import UserActivateModal from '@/features/user/components/UserActivateModal'
+import UserDeleteModal from '@/features/user/components/UserDeleteModal'
 import UserEditModal from '@/features/user/components/UserEditModal'
 import UserSuspendModal from '@/features/user/components/UserSuspendModal'
 import UserViewModal from '@/features/user/components/UserViewModal'
 import { userColumn } from '@/features/user/utils/userTableData'
+import { useAppSelector } from '@/lib/redux/hooks'
+import { skipToken } from '@reduxjs/toolkit/query'
 import {
   flexRender,
   getCoreRowModel,
@@ -24,8 +28,14 @@ import React, { useState } from 'react'
 import { toast } from 'sonner'
 
 export default function UserPage() {
+  const currentUser = useAppSelector((state) => state.auth)
   const [globalFilter, setGlobalFilter] = useState("")
-  const { data: users, isLoading } = useGetAllUsersQuery()
+  const { data: users, isLoading } = useGetAllUsersQuery(
+    currentUser.user?.id ? { currentUserId: currentUser.user?.id } : skipToken
+  );
+
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [profileToView, setProfileToView] = useState<Profile | null>(null)
@@ -39,6 +49,11 @@ export default function UserPage() {
   const [activateDialogOpen, setActivateDialogOpen] = useState(false)
   const [profileToActivate, setProfileToActivate] = useState<Profile | null>(null)
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [profileToDelete, setProfileToDelete] = useState<Profile | null>(null)
+
+
+  // Handle for OPEN DIALOG
   const handleOpenProfileDialog = (profile: Profile) => {
     setViewDialogOpen(true)
     setProfileToView(profile)
@@ -59,9 +74,15 @@ export default function UserPage() {
     setProfileToActivate(profile)
   }
 
+  const handleOpenDeleteDilaog = (profile: Profile) => {
+    setDeleteDialogOpen(true)
+    setProfileToDelete(profile)
+  }
+
   // Mutation 
   const [suspendUserProfile] = useSuspendUserProfileMutation()
   const [activateUserProfile] = useActivateUserProfileMutation()
+  const [deleteUserProfile] = useDeleteUserProfileMutation()
   // Suspend User Mutation
   const handleSuspendProfile = async (profile: Profile, reason?: string) => {
     try {
@@ -84,13 +105,25 @@ export default function UserPage() {
     }
   }
 
+  const handleDeleteUserProfile = async (profile: Profile) => {
+    try {
+      const res = await deleteUserProfile({ userId: profile.id })
+      toast.success(res.data?.meta.message)
+    } catch (error) {
+      console.log('error', error)
+      toast.error('Failed to delete user')
+    }
+  }
+
+  // TANSTACK REACT TABLE
   const table = useReactTable({
     data: users ?? [],
     columns: userColumn({
       onView: handleOpenProfileDialog,
       onEdit: handleOpenEditProfileDialog,
       onSuspend: handleOpenSuspendProfileDialog,
-      onActivate: handleOpenActivateProfileDialog
+      onActivate: handleOpenActivateProfileDialog,
+      onDelete: handleOpenDeleteDilaog
     }),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -99,6 +132,12 @@ export default function UserPage() {
       globalFilter
     },
     onGlobalFilterChange: setGlobalFilter,
+    filterFns: {
+      fuzzy: (row, columnId, value) => {
+        const itemValue = row.getValue(columnId) as string;
+        return itemValue?.toLowerCase().includes(value.toLowerCase());
+      },
+    },
     initialState: {
       pagination: {
         pageSize: 10
@@ -155,6 +194,40 @@ export default function UserPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">All Users</h2>
               <div className="flex items-center gap-4">
+                <Select
+                  value={(table.getColumn("status")?.getFilterValue() as string) ?? "all"}
+                  onValueChange={(value) => {
+                    table.getColumn("status")?.setFilterValue(value === "all" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="deleted">Deleted</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={(table.getColumn("role")?.getFilterValue() as string) ?? "all"}
+                  onValueChange={(value) => {
+                    table.getColumn("role")?.setFilterValue(value === "all" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="driver">Driver</SelectItem>
+                    <SelectItem value="rider">Rider</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <div className="relative">
                   <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
                   <Input
@@ -167,6 +240,7 @@ export default function UserPage() {
               </div>
             </div>
           </div>
+
 
           <Table>
             <TableHeader>
@@ -234,7 +308,7 @@ export default function UserPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div >
 
       <UserViewModal
         open={viewDialogOpen}
@@ -256,11 +330,17 @@ export default function UserPage() {
       />
 
       <UserActivateModal
-
         onClose={() => setActivateDialogOpen(false)}
         open={activateDialogOpen}
         profile={profileToActivate!}
         onConfirm={handleActivateUserProfile}
+      />
+
+      <UserDeleteModal
+        onClose={() => setDeleteDialogOpen(false)}
+        open={deleteDialogOpen}
+        profile={profileToDelete!}
+        onConfirm={handleDeleteUserProfile}
       />
     </>
   )

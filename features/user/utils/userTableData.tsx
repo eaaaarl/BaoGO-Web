@@ -9,12 +9,12 @@ interface userColumnProps {
   onView: (profile: Profile) => void;
   onEdit: (profile: Profile) => void;
   onSuspend: (profile: Profile) => void;
-  /* onDelete: (profile: Profile) => void; */
+  onDelete: (profile: Profile) => void;
   onActivate: (profile: Profile) => void;
 }
 
 const columnHelper = createColumnHelper<Profile>();
-export const userColumn = ({ onView, onEdit, onSuspend, onActivate }: userColumnProps) => {
+export const userColumn = ({ onView, onEdit, onSuspend, onActivate, onDelete }: userColumnProps) => {
   return [
     columnHelper.accessor('full_name', {
       header: () => 'User',
@@ -70,6 +70,7 @@ export const userColumn = ({ onView, onEdit, onSuspend, onActivate }: userColumn
     }),
 
     columnHelper.accessor('userRole', {
+      id: 'role', // Add this ID for filtering
       header: () => 'Role',
       cell: (info) => {
         const role = info.getValue();
@@ -95,6 +96,10 @@ export const userColumn = ({ onView, onEdit, onSuspend, onActivate }: userColumn
             {role}
           </span>
         );
+      },
+      filterFn: (row, columnId, filterValue) => {
+        const role = row.getValue(columnId) as string;
+        return role?.toLowerCase() === filterValue.toLowerCase();
       },
     }),
 
@@ -139,33 +144,37 @@ export const userColumn = ({ onView, onEdit, onSuspend, onActivate }: userColumn
       },
     }),
 
-    columnHelper.display({
-      id: 'account_status',
+    columnHelper.accessor('status', {
+      id: 'status', // Change from display to accessor with ID
       header: () => 'Status',
       cell: (info) => {
-        const profile = info.row.original;
-        let status = '';
+        const status = info.getValue();
+        let displayStatus = '';
         let colorClasses = '';
 
-        if (profile.status === 'active') {
-          status = 'Active';
+        if (status === 'active') {
+          displayStatus = 'Active';
           colorClasses = 'bg-green-100 text-green-800 border-green-200';
-        } else if (profile.status === 'inactive') {
-          status = 'Inactive';
+        } else if (status === 'inactive') {
+          displayStatus = 'Inactive';
           colorClasses = 'bg-gray-100 text-gray-800 border-gray-200';
-        } else if (profile.status === 'deleted') {
-          status = 'Deleted';
+        } else if (status === 'deleted') {
+          displayStatus = 'Deleted';
           colorClasses = 'bg-red-100 text-red-800 border-red-200';
-        } else if (profile.status === 'suspended') {
-          status = 'Suspended';
+        } else if (status === 'suspended') {
+          displayStatus = 'Suspended';
           colorClasses = 'bg-yellow-100 text-yellow-800 border-yellow-200';
         }
 
         return (
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colorClasses}`}>
-            {status}
+            {displayStatus}
           </span>
         );
+      },
+      filterFn: (row, columnId, filterValue) => {
+        const status = row.getValue(columnId) as string;
+        return status === filterValue;
       },
     }),
 
@@ -206,14 +215,12 @@ export const userColumn = ({ onView, onEdit, onSuspend, onActivate }: userColumn
               ) : null}
               <DropdownMenuItem
                 className="text-red-600"
-                onClick={() => {
-                  console.log('Delete user:', profile.id);
-                }}
+                onClick={() => onDelete(profile)}
               >
                 Delete User
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu >
+          </DropdownMenu>
         );
       },
     }),
