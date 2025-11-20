@@ -6,4 +6,5 @@ export interface Profile {
   avatar_url: string | null;
   created_at: string;
   phone_number: string | null;
+  status: "active" | "inactive" | "suspended" | "deleted";
 }

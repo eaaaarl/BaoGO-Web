@@ -30,6 +30,7 @@ export default function UserPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [profileToEdit, setProfileToEdit] = useState<Profile | null>(null)
 
+
   const handleOpenProfileDialog = (profile: Profile) => {
     setViewDialogOpen(true)
     setProfileToView(profile)
@@ -40,11 +41,12 @@ export default function UserPage() {
     setProfileToEdit(profile)
   }
 
+
   const table = useReactTable({
     data: users ?? [],
     columns: userColumn({
       onView: handleOpenProfileDialog,
-      onEdit: handleOpenEditProfileDialog
+      onEdit: handleOpenEditProfileDialog,
     }),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -201,7 +203,6 @@ export default function UserPage() {
         onClose={() => setEditDialogOpen(false)}
         user={profileToEdit}
       />
-
     </>
   )
 }

@@ -111,9 +111,9 @@ export default function UserEditModal({ open, onClose, user }: UserEditModalProp
 
             <DialogFooter>
               <Button disabled={isLoading} type="button" variant="outline" onClick={onClose}>
-                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Cancel'}
+                Cancel
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit"> {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}</Button>
             </DialogFooter>
           </form>
         </Form>
