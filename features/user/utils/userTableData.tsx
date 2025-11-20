@@ -9,12 +9,12 @@ interface userColumnProps {
   onView: (profile: Profile) => void;
   onEdit: (profile: Profile) => void;
   onSuspend: (profile: Profile) => void;
-  /* onDelete: (profile: Profile) => void; */
+  onDelete: (profile: Profile) => void;
   onActivate: (profile: Profile) => void;
 }
 
 const columnHelper = createColumnHelper<Profile>();
-export const userColumn = ({ onView, onEdit, onSuspend, onActivate }: userColumnProps) => {
+export const userColumn = ({ onView, onEdit, onSuspend, onActivate, onDelete }: userColumnProps) => {
   return [
     columnHelper.accessor('full_name', {
       header: () => 'User',
@@ -206,9 +206,7 @@ export const userColumn = ({ onView, onEdit, onSuspend, onActivate }: userColumn
               ) : null}
               <DropdownMenuItem
                 className="text-red-600"
-                onClick={() => {
-                  console.log('Delete user:', profile.id);
-                }}
+                onClick={() => onDelete(profile)}
               >
                 Delete User
               </DropdownMenuItem>

@@ -145,6 +145,38 @@ export const userApi = createApi({
       },
       invalidatesTags: ["getAllUser"],
     }),
+
+    deleteUserProfile: builder.mutation<
+      { meta: { success: boolean; message: string } },
+      { userId: string }
+    >({
+      queryFn: async ({ userId }) => {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            status: "deleted",
+          })
+          .eq("id", userId);
+
+        if (error) {
+          return {
+            error: {
+              message: error.message,
+            },
+          };
+        }
+
+        return {
+          data: {
+            meta: {
+              success: true,
+              message: "Profile deleted",
+            },
+          },
+        };
+      },
+      invalidatesTags: ["getAllUser"],
+    }),
   }),
 });
 
@@ -153,4 +185,5 @@ export const {
   useEditUserProfileMutation,
   useSuspendUserProfileMutation,
   useActivateUserProfileMutation,
+  useDeleteUserProfileMutation,
 } = userApi;
