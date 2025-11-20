@@ -77,7 +77,80 @@ export const userApi = createApi({
       },
       invalidatesTags: ["getAllUser"],
     }),
+
+    suspendUserProfile: builder.mutation<
+      {
+        meta: { success: boolean; message: string };
+      },
+      { userId: string }
+    >({
+      queryFn: async ({ userId }) => {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            status: "suspended",
+          })
+          .eq("id", userId);
+
+        if (error) {
+          return {
+            error: {
+              message: error.message,
+            },
+          };
+        }
+
+        return {
+          data: {
+            meta: {
+              success: true,
+              message: "Profile suspended",
+            },
+          },
+        };
+      },
+      invalidatesTags: ["getAllUser"],
+    }),
+
+    activateUserProfile: builder.mutation<
+      {
+        meta: { success: boolean; message: string };
+      },
+      { userId: string }
+    >({
+      queryFn: async ({ userId }) => {
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            status: "active",
+          })
+          .eq("id", userId);
+
+        if (error) {
+          return {
+            error: {
+              message: error.message,
+            },
+          };
+        }
+
+        return {
+          data: {
+            meta: {
+              success: true,
+              message: "Profile activated",
+            },
+          },
+        };
+      },
+      invalidatesTags: ["getAllUser"],
+    }),
   }),
 });
 
-export const { useGetAllUsersQuery, useEditUserProfileMutation } = userApi;
+export const {
+  useGetAllUsersQuery,
+  useEditUserProfileMutation,
+  useSuspendUserProfileMutation,
+  useActivateUserProfileMutation,
+} = userApi;

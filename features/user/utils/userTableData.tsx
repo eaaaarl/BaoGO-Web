@@ -1,5 +1,4 @@
 import { createColumnHelper } from "@tanstack/react-table";
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, User } from 'lucide-react';
@@ -9,10 +8,13 @@ import Image from "next/image";
 interface userColumnProps {
   onView: (profile: Profile) => void;
   onEdit: (profile: Profile) => void;
+  onSuspend: (profile: Profile) => void;
+  /* onDelete: (profile: Profile) => void; */
+  onActivate: (profile: Profile) => void;
 }
 
 const columnHelper = createColumnHelper<Profile>();
-export const userColumn = ({ onView, onEdit }: userColumnProps) => {
+export const userColumn = ({ onView, onEdit, onSuspend, onActivate }: userColumnProps) => {
   return [
     columnHelper.accessor('full_name', {
       header: () => 'User',
@@ -142,13 +144,27 @@ export const userColumn = ({ onView, onEdit }: userColumnProps) => {
       header: () => 'Status',
       cell: (info) => {
         const profile = info.row.original;
-        const isRecent = new Date(profile.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const status = isRecent ? 'Active' : 'Inactive';
+        let status = '';
+        let colorClasses = '';
+
+        if (profile.status === 'active') {
+          status = 'Active';
+          colorClasses = 'bg-green-100 text-green-800 border-green-200';
+        } else if (profile.status === 'inactive') {
+          status = 'Inactive';
+          colorClasses = 'bg-gray-100 text-gray-800 border-gray-200';
+        } else if (profile.status === 'deleted') {
+          status = 'Deleted';
+          colorClasses = 'bg-red-100 text-red-800 border-red-200';
+        } else if (profile.status === 'suspended') {
+          status = 'Suspended';
+          colorClasses = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        }
 
         return (
-          <Badge variant={status === 'Active' ? 'default' : 'secondary'}>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${colorClasses}`}>
             {status}
-          </Badge>
+          </span>
         );
       },
     }),
@@ -179,32 +195,15 @@ export const userColumn = ({ onView, onEdit }: userColumnProps) => {
                 Edit User
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {profile.userRole === 'Driver' && (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      console.log('View driver stats:', profile.id);
-                    }}
-                  >
-                    Driver Statistics
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem
-                onClick={() => {
-                  console.log('Reset password:', profile.id);
-                }}
-              >
-                Reset Password
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  console.log('Suspend user:', profile.id);
-                }}
-              >
-                Suspend Account
-              </DropdownMenuItem>
+              {profile.status === 'suspended' ? (
+                <DropdownMenuItem onClick={() => onActivate(profile)}>
+                  Activate Account
+                </DropdownMenuItem>
+              ) : profile.status === 'active' || profile.status === 'inactive' ? (
+                <DropdownMenuItem onClick={() => onSuspend(profile)}>
+                  Suspend Account
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem
                 className="text-red-600"
                 onClick={() => {
@@ -214,7 +213,7 @@ export const userColumn = ({ onView, onEdit }: userColumnProps) => {
                 Delete User
               </DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu >
         );
       },
     }),
