@@ -41,11 +41,11 @@ const data = {
       icon: SquareTerminal,
       isActive: true,
     },
-    {
-      title: "Driver",
-      url: "/driver",
-      icon: Bot,
-    },
+    /*  {
+       title: "Driver",
+       url: "/driver",
+       icon: Bot,
+     }, */
     {
       title: "Users",
       url: "/user",

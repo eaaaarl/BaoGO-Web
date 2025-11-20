@@ -12,7 +12,7 @@ export const userApi = createApi({
         try {
           const { data, error } = await supabase
             .from("profiles")
-            .select("*")
+            .select("*, driver:driver_profiles(*)")
             .neq("id", currentUserId);
 
           if (error) {
@@ -22,7 +22,6 @@ export const userApi = createApi({
               },
             };
           }
-
           return {
             data,
           };

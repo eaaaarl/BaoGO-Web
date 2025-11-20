@@ -4,7 +4,6 @@ import React, { ReactNode } from 'react'
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/features/dashboard/components/app-sidebar"
 
