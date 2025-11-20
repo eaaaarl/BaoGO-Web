@@ -12,6 +12,8 @@ import UserEditModal from '@/features/user/components/UserEditModal'
 import UserSuspendModal from '@/features/user/components/UserSuspendModal'
 import UserViewModal from '@/features/user/components/UserViewModal'
 import { userColumn } from '@/features/user/utils/userTableData'
+import { useAppSelector } from '@/lib/redux/hooks'
+import { skipToken } from '@reduxjs/toolkit/query'
 import {
   flexRender,
   getCoreRowModel,
@@ -24,8 +26,12 @@ import React, { useState } from 'react'
 import { toast } from 'sonner'
 
 export default function UserPage() {
+  const currentUser = useAppSelector((state) => state.auth)
   const [globalFilter, setGlobalFilter] = useState("")
-  const { data: users, isLoading } = useGetAllUsersQuery()
+  const { data: users, isLoading } = useGetAllUsersQuery(
+    currentUser.user?.id ? { currentUserId: currentUser.user?.id } : skipToken
+  );
+
 
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [profileToView, setProfileToView] = useState<Profile | null>(null)

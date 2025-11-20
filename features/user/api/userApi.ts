@@ -7,13 +7,13 @@ export const userApi = createApi({
   baseQuery: fakeBaseQuery(),
   tagTypes: ["getAllUser"],
   endpoints: (builder) => ({
-    getAllUsers: builder.query<Profile[], void>({
-      queryFn: async () => {
+    getAllUsers: builder.query<Profile[], { currentUserId: string }>({
+      queryFn: async ({ currentUserId }) => {
         try {
           const { data, error } = await supabase
             .from("profiles")
             .select("*")
-            .eq("userRole", "Rider");
+            .neq("id", currentUserId);
 
           if (error) {
             return {
