@@ -3,6 +3,7 @@
 import { Breadcrumb, BreadcrumbItem, BreadcrumbPage, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from '@/components/ui/select'
 import { SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Profile } from '@/features/user/api/interface'
@@ -33,6 +34,8 @@ export default function UserPage() {
     currentUser.user?.id ? { currentUserId: currentUser.user?.id } : skipToken
   );
 
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [profileToView, setProfileToView] = useState<Profile | null>(null)
@@ -129,6 +132,12 @@ export default function UserPage() {
       globalFilter
     },
     onGlobalFilterChange: setGlobalFilter,
+    filterFns: {
+      fuzzy: (row, columnId, value) => {
+        const itemValue = row.getValue(columnId) as string;
+        return itemValue?.toLowerCase().includes(value.toLowerCase());
+      },
+    },
     initialState: {
       pagination: {
         pageSize: 10
@@ -185,6 +194,40 @@ export default function UserPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">All Users</h2>
               <div className="flex items-center gap-4">
+                <Select
+                  value={(table.getColumn("status")?.getFilterValue() as string) ?? "all"}
+                  onValueChange={(value) => {
+                    table.getColumn("status")?.setFilterValue(value === "all" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="deleted">Deleted</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={(table.getColumn("role")?.getFilterValue() as string) ?? "all"}
+                  onValueChange={(value) => {
+                    table.getColumn("role")?.setFilterValue(value === "all" ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="driver">Driver</SelectItem>
+                    <SelectItem value="rider">Rider</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <div className="relative">
                   <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
                   <Input
@@ -197,6 +240,7 @@ export default function UserPage() {
               </div>
             </div>
           </div>
+
 
           <Table>
             <TableHeader>
@@ -264,7 +308,7 @@ export default function UserPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div >
 
       <UserViewModal
         open={viewDialogOpen}
