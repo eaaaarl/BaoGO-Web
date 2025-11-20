@@ -6,11 +6,14 @@ import { MoreHorizontal, User } from 'lucide-react';
 import { Profile } from "../api/interface";
 import Image from "next/image";
 
-const columnHelper = createColumnHelper<Profile>();
+interface userColumnProps {
+  onView: (profile: Profile) => void;
+  onEdit: (profile: Profile) => void;
+}
 
-export const userColumn = () => {
+const columnHelper = createColumnHelper<Profile>();
+export const userColumn = ({ onView, onEdit }: userColumnProps) => {
   return [
-    // User Profile Column (Avatar + Name + ID)
     columnHelper.accessor('full_name', {
       header: () => 'User',
       cell: (info) => {
@@ -18,7 +21,6 @@ export const userColumn = () => {
         const fullName = info.getValue() || 'Unknown User';
         const avatarUrl = profile.avatar_url;
 
-        // Generate initials from full name
         const initials = fullName
           .split(' ')
           .map(name => name[0])
@@ -50,7 +52,6 @@ export const userColumn = () => {
       },
     }),
 
-    // Contact Information Column
     columnHelper.accessor('email', {
       header: () => 'Contact',
       cell: (info) => {
@@ -66,27 +67,10 @@ export const userColumn = () => {
       },
     }),
 
-    // User Role Column
     columnHelper.accessor('userRole', {
       header: () => 'Role',
       cell: (info) => {
         const role = info.getValue();
-
-        const getRoleVariant = (role: string) => {
-          switch (role?.toLowerCase()) {
-            case 'driver':
-              return 'default';
-            case 'rider':
-            case 'passenger':
-              return 'secondary';
-            case 'admin':
-              return 'destructive';
-            case 'moderator':
-              return 'outline';
-            default:
-              return 'secondary';
-          }
-        };
 
         const getRoleColor = (role: string) => {
           switch (role?.toLowerCase()) {
@@ -112,7 +96,6 @@ export const userColumn = () => {
       },
     }),
 
-    // Join Date Column
     columnHelper.accessor('created_at', {
       header: () => 'Join Date',
       cell: (info) => {
@@ -154,14 +137,11 @@ export const userColumn = () => {
       },
     }),
 
-    // Account Status Column (you might want to add this to your interface)
     columnHelper.display({
       id: 'account_status',
       header: () => 'Status',
       cell: (info) => {
         const profile = info.row.original;
-        // You can determine status based on various factors
-        // For now, assuming active if created recently, inactive if old
         const isRecent = new Date(profile.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const status = isRecent ? 'Active' : 'Inactive';
 
@@ -173,7 +153,6 @@ export const userColumn = () => {
       },
     }),
 
-    // Actions Column
     columnHelper.display({
       id: 'actions',
       header: () => '',
@@ -190,16 +169,12 @@ export const userColumn = () => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => {
-                  console.log('View profile:', profile.id);
-                }}
+                onClick={() => onView(profile)}
               >
                 View Profile
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => {
-                  console.log('Edit user:', profile.id);
-                }}
+                onClick={() => onEdit(profile)}
               >
                 Edit User
               </DropdownMenuItem>

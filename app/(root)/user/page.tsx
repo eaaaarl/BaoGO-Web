@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SidebarSeparator, SidebarTrigger } from '@/components/ui/sidebar'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Profile } from '@/features/user/api/interface'
 import { useGetAllUsersQuery } from '@/features/user/api/userApi'
+import UserEditModal from '@/features/user/components/UserEditModal'
+import UserViewModal from '@/features/user/components/UserViewModal'
 import { userColumn } from '@/features/user/utils/userTableData'
 import {
   flexRender,
@@ -14,23 +17,42 @@ import {
   getFilteredRowModel,
   useReactTable
 } from '@tanstack/react-table'
-import { Search, Plus } from 'lucide-react'
+import { Search } from 'lucide-react'
 import React, { useState } from 'react'
 
 export default function UserPage() {
   const [globalFilter, setGlobalFilter] = useState("")
   const { data: users, isLoading } = useGetAllUsersQuery()
 
+  const [viewDialogOpen, setViewDialogOpen] = useState(false)
+  const [profileToView, setProfileToView] = useState<Profile | null>(null)
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [profileToEdit, setProfileToEdit] = useState<Profile | null>(null)
+
+  const handleOpenProfileDialog = (profile: Profile) => {
+    setViewDialogOpen(true)
+    setProfileToView(profile)
+  }
+
+  const handleOpenEditProfileDialog = (profile: Profile) => {
+    setEditDialogOpen(true)
+    setProfileToEdit(profile)
+  }
+
   const table = useReactTable({
     data: users ?? [],
-    columns: userColumn(),
+    columns: userColumn({
+      onView: handleOpenProfileDialog,
+      onEdit: handleOpenEditProfileDialog
+    }),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(), // Add this for search to work
+    getFilteredRowModel: getFilteredRowModel(),
     state: {
       globalFilter
     },
-    onGlobalFilterChange: setGlobalFilter, // Add this for search to work
+    onGlobalFilterChange: setGlobalFilter,
     initialState: {
       pagination: {
         pageSize: 10
@@ -80,10 +102,6 @@ export default function UserPage() {
             <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
             <p className="text-gray-600 mt-1">Monitor and manage all users</p>
           </div>
-          {/*  <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add User
-          </Button> */}
         </div>
 
         <div className="bg-white rounded-lg shadow">
@@ -171,6 +189,19 @@ export default function UserPage() {
           </div>
         </div>
       </div>
+
+      <UserViewModal
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
+        user={profileToView}
+      />
+
+      <UserEditModal
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        user={profileToEdit}
+      />
+
     </>
   )
 }
